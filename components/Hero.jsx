@@ -1,8 +1,31 @@
+"use client"
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Rocket, Code, ArrowRight } from 'lucide-react';
+import { auth, googleProvider, githubProvider } from '../firebase';
+import { signInWithPopup } from 'firebase/auth';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { useRouter } from 'next/navigation';
 
 const Hero = () => {
+  const [user] = useAuthState(auth);
+  const router = useRouter();
+
+  const handleAuth = async (provider) => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+    }
+  };
+
+  if (user) {
+    return null; // Don't render anything if user is authenticated
+  }
+
   return (
     <div className="relative min-h-screen bg-black pt-20 mt-10">
       <div 
@@ -29,6 +52,7 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row gap-6 justify-center mt-8">
             <Button 
               className="group bg-[#a6ff00] text-black hover:bg-white text-lg px-8 py-6 relative overflow-hidden transition-all duration-300 hover:pr-12"
+              onClick={() => handleAuth(googleProvider)}
             >
               <div className="flex items-center gap-2">
                 <Rocket className="w-5 h-5" />
@@ -40,6 +64,7 @@ const Hero = () => {
             <Button 
               variant="outline" 
               className="group border-2 border-black text-black hover:bg-[#a6ff00]/90 text-lg px-8 py-6 relative overflow-hidden transition-all duration-300 hover:pr-12"
+              onClick={() => handleAuth(githubProvider)}
             >
               <div className="flex items-center gap-2">
                 <Code className="w-5 h-5" />

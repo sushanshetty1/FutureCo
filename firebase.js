@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore'; // Import Firestore
 
 const firebaseConfig = {
   apiKey: "AIzaSyABx3-PqoOufb52ECDAZt7uL4ZjkjbYHSM",
@@ -13,6 +14,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+// Initialize Auth
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
@@ -25,4 +27,7 @@ githubProvider.setCustomParameters({
   prompt: 'consent'
 });
 
-export { auth, googleProvider, githubProvider };
+// Initialize Firestore
+const db = getFirestore(app);
+
+export { auth, googleProvider, githubProvider, db };
