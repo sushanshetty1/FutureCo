@@ -38,7 +38,6 @@ const DeveloperDashboard = () => {
   const [formError, setFormError] = useState("");
   const [authChecked, setAuthChecked] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const NEXT_PUBLIC_GITHUB_TOKEN = "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"
   const [profile, setProfile] = useState({
     bio: "",
     experience: "",
@@ -99,8 +98,8 @@ const DeveloperDashboard = () => {
 
         // Fetch GitHub user data with rate limiting considerations
         const headers = {};
-        if (NEXT_PUBLIC_GITHUB_TOKEN) {
-          headers.Authorization = `token ${NEXT_PUBLIC_GITHUB_TOKEN}`;
+        if (process.env.NEXT_PUBLIC_GITHUB_TOKEN) {
+          headers.Authorization = `token ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`;
         }
 
         const userResponse = await fetch(`https://api.github.com/users/${githubUsername}`, { headers });

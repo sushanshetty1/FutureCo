@@ -6,7 +6,7 @@ import { auth, googleProvider, githubProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
-import { db } from '../../firebase'; // Ensure db is exported from your firebase setup
+import { db } from '../../firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const LoginPage = () => {

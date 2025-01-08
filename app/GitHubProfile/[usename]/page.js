@@ -81,6 +81,7 @@ const GitHubProfile = () => {
   }, [username]);
 
 
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black pt-24 flex items-center justify-center">
