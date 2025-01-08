@@ -1,6 +1,6 @@
 "use client"
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/Navbar.jsx';
 
 const NotFoundPage = () => {
   return (
