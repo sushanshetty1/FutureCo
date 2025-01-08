@@ -16,7 +16,7 @@ const GitHubProfile = () => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [username, setUsername] = useState(null);
-
+  const NEXT_PUBLIC_GITHUB_TOKEN="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"
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -34,8 +34,8 @@ const GitHubProfile = () => {
     const fetchGithubData = async () => {
       try {
         const headers = {};
-        if (process.env.NEXT_PUBLIC_GITHUB_TOKEN) {
-          headers.Authorization = `token ${process.env.NEXT_PUBLIC_GITHUB_TOKEN}`;
+        if (NEXT_PUBLIC_GITHUB_TOKEN) {
+          headers.Authorization = `token ${NEXT_PUBLIC_GITHUB_TOKEN}`;
         }
 
         const userResponse = await fetch(`https://api.github.com/users/${username}`, { headers });
