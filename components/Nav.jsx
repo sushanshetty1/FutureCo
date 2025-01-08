@@ -23,7 +23,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import photo from '../public/profile.png';
 
-const Navbar = () => {
+const Nav = () => {
   const [user] = useAuthState(auth);
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -239,4 +239,4 @@ const MobileNavLink = ({ href, children, onClick }) => (
   </Link>
 );
 
-export default Navbar;
+export default Nav;

@@ -26,7 +26,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from "@/components/Navbar.jsx";
+import Nav from "@/components/Nav";
 
 const DeveloperDashboard = () => {
   const router = useRouter();
@@ -264,7 +264,7 @@ const DeveloperDashboard = () => {
 
   return (
     <>
-      <Navbar />
+      <Nav />
       <div className="min-h-screen bg-black pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Profile Header */}

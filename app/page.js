@@ -1,12 +1,12 @@
 import Hero from '@/components/Hero'
-import Navbar from '@/components/Navbar.jsx'
+import Nav from '@/components/Nav'
 import { Divide } from 'lucide-react'
 import React from 'react'
 
 const page = () => {
   return (
     <>
-    <Navbar />
+    <Nav />
     <Hero />
     </>
     

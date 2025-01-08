@@ -37,7 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { auth, db } from '@/firebase';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Navbar from '@/components/Navbar.jsx';
+import Nav from '@/components/Nav';
 
 const countryCodes = [
   { value: "+1", label: "US/CA (+1)" },
@@ -341,7 +341,7 @@ const StartupDetail = ({ params }) => {
 
   return (
     <>
-        <Navbar />
+        <Nav/>
 
     <div className="min-h-screen bg-black pt-24 pb-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

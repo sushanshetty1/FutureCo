@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar.jsx';
+import Nav from '@/components/Nav';
 import { auth, googleProvider, githubProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { FcGoogle } from 'react-icons/fc';
@@ -49,7 +49,7 @@ const LoginPage = () => {
 
   return (
     <>
-      <Navbar />
+      <Nav />
       <div className="min-h-screen bg-black flex flex-col items-center justify-center mt-4 mb-36">
 
         <div className="w-full max-w-[1200px] mx-auto px-10 lg:px-10 md:px-5">

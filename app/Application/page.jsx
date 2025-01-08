@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, XCircle, Clock, Building2, Users, Calendar, MapPin, Briefcase, Trash2, Mail } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from '@/components/Navbar.jsx';
+import Nav from '@/components/Nav';
 import { Phone, CheckCircle } from 'lucide-react';
 
 const StatusIcon = ({ status }) => {
@@ -261,7 +261,7 @@ const ApplicationRequests = () => {
 
   return (
     <>
-      <Navbar />
+      <Nav />
       <div className="min-h-screen bg-black pt-24 pb-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">

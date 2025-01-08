@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { auth, db } from '../../firebase';
 import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import Navbar from '@/components/Navbar.jsx';
+import Nav from '@/components/Nav.jsx';
 
 const NotificationsEmptyState = () => (
   <Card className="bg-black border border-white/10">
@@ -143,7 +143,7 @@ const Notifications = () => {
 
   return (
     <>
-      <Navbar />
+      <Nav />
       <div className="max-w-4xl mx-auto pt-24 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white">Notifications</h1>

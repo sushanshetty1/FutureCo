@@ -64,8 +64,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import ApplicationsList from '@/components/ApplicationsList';
-import Navbar from "@/components/Navbar.jsx";
-
+import Nav from '@/components/Nav';
 
 const FounderDashboard = () => {
   const router = useRouter();
@@ -215,7 +214,7 @@ const FounderDashboard = () => {
 
   return (
     <>
-    <Navbar />
+    <Nav />
     <div className="min-h-screen bg-black pt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
