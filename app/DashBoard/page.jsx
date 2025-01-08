@@ -1,3 +1,4 @@
+//DashBoard
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -47,19 +48,23 @@ import {
 } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { auth, db } from "../../firebase";
-import {
-  collection,
-  addDoc,
-  query,
-  where,
-  getDocs,
-  onSnapshot,
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  updateDoc, 
+  doc, 
+  getDoc, 
+  where, 
+  getDocs, 
+  onSnapshot, 
   serverTimestamp,
   orderBy,
+  writeBatch
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
+import ApplicationsList from '@/components/ApplicationsList';
 import Navbar from "@/components/NavBar";
-import Category from '@/components/Category';
 
 
 const FounderDashboard = () => {
@@ -84,7 +89,6 @@ const FounderDashboard = () => {
     employeeCount: "",
     whatsappNumber: "",
     countryCode: "+1",
-    categories: [],
   });
 
   const validateWhatsAppNumber = (number) => {
@@ -144,65 +148,68 @@ const FounderDashboard = () => {
 
   const handleNewListing = async (e) => {
     e.preventDefault();
-    if (!user || !acceptedTerms) {
-      setFormError("Please accept the terms and conditions to continue.");
+    
+    // Check if user is signed in with Google
+    if (!user || user.providerData[0].providerId !== 'google.com') {
+      setFormError('Only Google-authenticated users can create listings.');
       return;
     }
-
-    if (newListing.categories.length === 0) {
-      setFormError("Please select at least one category");
+  
+    if (!acceptedTerms) {
+      setFormError('Please accept the terms and conditions to continue.');
       return;
     }
-
+  
     const equityValue = parseInt(newListing.equity);
     if (isNaN(equityValue) || equityValue < 0 || equityValue > 100) {
-      setFormError("Equity must be a valid percentage between 0 and 100");
+      setFormError('Equity must be a valid percentage between 0 and 100');
       return;
     }
-
+  
     if (!validateWhatsAppNumber(newListing.whatsappNumber)) {
-      setFormError("Please enter a valid 10-digit WhatsApp number");
+      setFormError('Please enter a valid 10-digit WhatsApp number');
       return;
     }
-
+  
     try {
-      await addDoc(collection(db, "startupListings"), {
+      await addDoc(collection(db, 'startupListings'), {
         ...newListing,
         equity: equityValue,
         founderId: user.uid,
         founderName: user.displayName,
         founderEmail: user.email,
         createdAt: serverTimestamp(),
-        techStack: newListing.techStack.split(",").map((tech) => tech.trim()),
+        techStack: newListing.techStack.split(',').map((tech) => tech.trim()),
         whatsappNumber: `${newListing.countryCode}${newListing.whatsappNumber}`,
-        categories: newListing.categories,
         applicants: 0,
-        status: "active",
+        status: 'active'
       });
-
+  
       setIsNewListingOpen(false);
       setNewListing({
-        title: "",
-        description: "",
-        equity: "",
-        location: "",
-        techStack: "",
-        requirements: "",
-        workType: "remote",
-        commitment: "full-time",
-        foundingDate: "",
-        employeeCount: "",
-        whatsappNumber: "",
-        countryCode: "+1",
-        categories: [],
+        title: '',
+        description: '',
+        equity: '',
+        location: '',
+        techStack: '',
+        requirements: '',
+        workType: 'Remote',
+        commitment: 'Full-Time',
+        foundingDate: '',
+        employeeCount: '',
+        whatsappNumber: '',
+        countryCode: '+1',
+        listing: "unfilled"
       });
       setAcceptedTerms(false);
-      setFormError("");
+      setFormError('');
     } catch (error) {
-      console.error("Error creating listing:", error);
-      setFormError(
-        "An error occurred while creating the listing. Please try again."
-      );
+      console.error('Error creating listing:', error);
+      if (error.code === 'permission-denied') {
+        setFormError('You do not have permission to create listings. Please ensure you are signed in with Google.');
+      } else {
+        setFormError('An error occurred while creating the listing. Please try again.');
+      }
     }
   };
 
@@ -407,15 +414,6 @@ const FounderDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                  <h3 className="text-lg text-white">Categories</h3>
-                  <Category
-                    selectedCategories={newListing.categories}
-                    setSelectedCategories={(categories) => 
-                      setNewListing(prev => ({ ...prev, categories }))
-                    }
-                  />
-                </div>
                   <div>
                     <h3 className="text-lg text-white mb-4">Tech Stack</h3>
                     <Label className="text-white text-base">Required Tech Stack</Label>
@@ -530,97 +528,413 @@ const StartupListing = ({
   techStack, 
   workType, 
   commitment, 
-  categories,
   onViewApplications 
-}) => (
-  <Card className="bg-[#1f1f1f] border-white/10 hover:border-[#a6ff00]/50 transition-all duration-300">
-    <CardHeader className="pb-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <CardTitle className="text-xl text-white">{title}</CardTitle>
-          <CardDescription className="text-white/70 mt-2 text-base leading-relaxed">
-            {description}
-          </CardDescription>
+}) => {
+  const [showApplications, setShowApplications] = useState(false);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const createNotification = (type, recipientId, listingData, applicationData = {}) => {
+    const baseNotification = {
+      recipientId,
+      founderId: auth.currentUser?.uid,
+      listingId: listingData.id,
+      roleTitle: listingData.title,
+      timestamp: serverTimestamp(),
+      read: false,
+      founderName: auth.currentUser?.displayName || 'Founder',
+      equity: listingData.equity,
+      techStack: listingData.techStack,
+      location: listingData.location
+    };
+
+    switch (type) {
+      case 'application_approved':
+        return {
+          ...baseNotification,
+          type: 'application_approved',
+          message: `Congratulations! Your application for ${listingData.title} has been approved.`,
+          title: 'Application Approved! 🎉',
+          description: `Your application for the ${listingData.title} position offering ${listingData.equity}% equity has been approved. The founder will contact you via WhatsApp soon to discuss next steps.`,
+          whatsappNumber: listingData.whatsappNumber
+        };
+      case 'application_rejected':
+        return {
+          ...baseNotification,
+          type: 'application_rejected',
+          message: `Update on your application for ${listingData.title}`,
+          title: 'Application Status Update',
+          description: `We appreciate your interest in ${listingData.title}. After careful consideration, we have decided to move forward with other candidates. Keep exploring opportunities that match your skills!`,
+          feedback: applicationData.feedback || 'Thank you for applying.'
+        };
+      default:
+        return baseNotification;
+    }
+  };
+
+  const fetchApplications = async () => {
+    if (!id || !auth.currentUser) return;
+    
+    setLoading(true);
+    try {
+      // First verify the user is the founder of this listing
+      const listingRef = doc(db, 'startupListings', id);
+      const listingDoc = await getDoc(listingRef);
+      
+      if (!listingDoc.exists() || listingDoc.data().founderId !== auth.currentUser.uid) {
+        console.warn('User does not have permission to view these applications');
+        setApplications([]);
+        setLoading(false);
+        return;
+      }
+  
+      const applicationsRef = collection(db, 'startupListings', id, 'applications');
+      const applicationsSnap = await getDocs(applicationsRef);
+      
+      const applicationsData = await Promise.all(
+        applicationsSnap.docs.map(async (appDoc) => {
+          const applicationData = appDoc.data();
+          
+          // Only attempt to fetch user data if we have a userId
+          let userData = {};
+          if (applicationData.userId) {
+            try {
+              const userDocRef = doc(db, 'users', applicationData.userId);
+              const userDocSnap = await getDoc(userDocRef);
+              if (userDocSnap.exists()) {
+                userData = userDocSnap.data();
+              }
+            } catch (error) {
+              console.warn(`Could not fetch user data for ${applicationData.userId}:`, error);
+            }
+          }
+          
+          return {
+            id: appDoc.id,
+            ...applicationData,
+            // Use application data first, then fall back to user data
+            applicantName: applicationData.applicantName || userData.displayName || 'Anonymous',
+            applicantEmail: applicationData.applicantEmail || userData.email || 'No email provided'
+          };
+        })
+      );
+  
+      setApplications(applicationsData);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      if (error.code === 'permission-denied') {
+        setApplications([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async (applicationId, listingId, applicantId) => {
+    if (!listingId || !applicationId || !applicantId || !auth.currentUser) {
+      console.error('Missing required parameters for approval');
+      return false;
+    }
+  
+    try {
+      const batch = writeBatch(db);
+      
+      // Get listing data
+      const listingRef = doc(db, 'startupListings', listingId);
+      const listingDoc = await getDoc(listingRef);
+      
+      if (!listingDoc.exists() || listingDoc.data().founderId !== auth.currentUser.uid) {
+        throw new Error('Unauthorized access');
+      }
+  
+      const listingData = { id: listingId, ...listingDoc.data() };
+      
+      // Get application data - Fix: Corrected path to applications subcollection
+      const approvedAppRef = doc(db, 'startupListings', listingId, 'applications', applicationId);
+      const approvedAppDoc = await getDoc(approvedAppRef);
+      
+      if (!approvedAppDoc.exists()) {
+        throw new Error('Application not found');
+      }
+  
+      const approvedAppData = approvedAppDoc.data();
+  
+      // Update application status
+      batch.update(approvedAppRef, {
+        status: 'approved',
+        reviewedAt: serverTimestamp(),
+        reviewedBy: auth.currentUser.uid
+      });
+  
+      // Create notification
+      const notificationData = {
+        recipientId: applicantId,
+        founderId: auth.currentUser.uid,
+        listingId: listingId,
+        roleTitle: listingData.title,
+        timestamp: serverTimestamp(),
+        read: false,
+        type: 'application_approved',
+        message: `Congratulations! Your application for ${listingData.title} has been approved.`,
+        title: 'Application Approved! 🎉',
+        description: `Your application for the ${listingData.title} position offering ${listingData.equity}% equity has been approved. The founder will contact you via WhatsApp soon to discuss next steps.`,
+        whatsappNumber: listingData.whatsappNumber,
+        founderName: auth.currentUser.displayName || 'Founder'
+      };
+  
+      const notificationRef = doc(collection(db, 'notifications'));
+      batch.set(notificationRef, notificationData);
+  
+      // Update listing status and add the new field
+      batch.update(listingRef, {
+        status: 'filled',
+        filledAt: serverTimestamp(),
+        filledBy: applicantId,
+        filledByName: approvedAppData.applicantName || 'Anonymous',
+        listing: "success"  // Add the new field here
+      });
+  
+      // Reject other applications
+      const applicationsQuery = query(collection(db, 'startupListings', listingId, 'applications'));
+      const applicationsSnap = await getDocs(applicationsQuery);
+      
+      for (const appDoc of applicationsSnap.docs) {
+        if (appDoc.id !== applicationId) {
+          const appData = appDoc.data();
+          
+          // Update application status
+          batch.update(doc(db, 'startupListings', listingId, 'applications', appDoc.id), {
+            status: 'rejected',
+            reviewedAt: serverTimestamp(),
+            reviewedBy: auth.currentUser.uid
+          });
+  
+          // Create rejection notification
+          if (appData.userId) {
+            const rejectionNotificationRef = doc(collection(db, 'notifications'));
+            batch.set(rejectionNotificationRef, {
+              recipientId: appData.userId,
+              founderId: auth.currentUser.uid,
+              listingId: listingId,
+              roleTitle: listingData.title,
+              timestamp: serverTimestamp(),
+              read: false,
+              type: 'application_rejected',
+              message: `Update on your application for ${listingData.title}`,
+              title: 'Application Status Update',
+              description: `We appreciate your interest in ${listingData.title}. After careful consideration, we have decided to move forward with other candidates.`,
+              founderName: auth.currentUser.displayName || 'Founder'
+            });
+          }
+        }
+      }
+  
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error('Error handling application approval:', error);
+      return false;
+    }
+  };
+  
+  
+  const handleReject = async (applicationId, listingId, applicantId) => {
+    if (!listingId || !applicationId || !applicantId || !auth.currentUser) {
+      console.error('Missing required parameters for rejection');
+      return false;
+    }
+  
+    try {
+      const batch = writeBatch(db);
+      
+      // Get listing data
+      const listingRef = doc(db, 'startupListings', listingId);
+      const listingDoc = await getDoc(listingRef);
+      
+      if (!listingDoc.exists()) {
+        throw new Error('Listing not found');
+      }
+  
+      const listingData = listingDoc.data();
+      
+      // Update application status - Fix: Corrected path to applications subcollection
+      const applicationRef = doc(db, 'startupListings', listingId, 'applications', applicationId);
+      batch.update(applicationRef, {
+        status: 'rejected',
+        reviewedAt: serverTimestamp(),
+        reviewedBy: auth.currentUser.uid
+      });
+  
+      // Create rejection notification
+      const notificationRef = doc(collection(db, 'notifications'));
+      batch.set(notificationRef, {
+        recipientId: applicantId,
+        founderId: auth.currentUser.uid,
+        listingId: listingId,
+        roleTitle: listingData.title,
+        timestamp: serverTimestamp(),
+        read: false,
+        type: 'application_rejected',
+        message: `Update on your application for ${listingData.title}`,
+        title: 'Application Status Update',
+        description: `We appreciate your interest in ${listingData.title}. After careful consideration, we have decided to move forward with other candidates.`,
+        founderName: auth.currentUser.displayName || 'Founder'
+      });
+  
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.error('Error handling application rejection:', error);
+      return false;
+    }
+  };
+  
+  // Updated handler functions
+  const handleApplicationApproval = async (application) => {
+    if (!application || !application.id) {
+      console.error('Missing application data');
+      return false;
+    }
+  
+    try {
+      setLoading(true);
+      const success = await handleApprove(application.id, id, application.userId);
+      if (success) {
+        await fetchApplications();
+        setShowApplications(false); // Close the dialog after successful approval
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error in handleApplicationApproval:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleApplicationRejection = async (application) => {
+    if (!application || !application.id) {
+      console.error('Missing application data');
+      return false;
+    }
+  
+    try {
+      setLoading(true);
+      const success = await handleReject(application.id, id, application.userId);
+      if (success) {
+        await fetchApplications();
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error in handleApplicationRejection:', error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showApplications) {
+      fetchApplications();
+    }
+  }, [showApplications, id]);
+
+  return (
+    <Card className="bg-[#1f1f1f] border-white/10 hover:border-[#a6ff00]/50 transition-all duration-300">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-xl text-white">{title}</CardTitle>
+            <CardDescription className="text-white/70 mt-2 text-base leading-relaxed">
+              {description}
+            </CardDescription>
+          </div>
+          <Dialog open={showApplications} onOpenChange={setShowApplications}>
+        <DialogTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className="text-[#a6ff00] hover:text-white hover:bg-white/10"
+          >
+            View Applications
+            <ArrowUpRight className="w-4 h-4 ml-2" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-[#1f1f1f] border-white/10 max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-white">{title} - Applications</DialogTitle>
+          </DialogHeader>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 text-[#a6ff00] animate-spin" />
+            </div>
+          ) : (
+            <ApplicationsList
+              applications={applications}
+              onApprove={handleApplicationApproval}
+              onReject={handleApplicationRejection}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
         </div>
-        <Button 
-          variant="ghost" 
-          className="text-[#a6ff00] hover:text-white hover:bg-white/10"
-          onClick={onViewApplications}
-        >
-          View Applications
-          <ArrowUpRight className="w-4 h-4 ml-2" />
-        </Button>
-        </div>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-center gap-6">
-          <div className="flex items-center text-white/70">
-            <Briefcase className="w-4 h-4 mr-2" />
-            {equity} equity
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center text-white/70">
+              <Briefcase className="w-4 h-4 mr-2" />
+              {equity} equity
+            </div>
+            <div className="flex items-center text-white/70">
+              <Users className="w-4 h-4 mr-2" />
+              {applicants || 0} applications
+            </div>
+            <div className="px-3 py-1 rounded-full bg-[#a6ff00]/10 text-[#a6ff00] text-sm">
+              {workType}
+            </div>
+            <div className="px-3 py-1 rounded-full bg-white/5 text-white/70 text-sm">
+              {commitment}
+            </div>
+            <div className="px-3 py-1 rounded-full bg-white/5 text-white/70 text-sm">
+              {location}
+            </div>
           </div>
-          <div className="flex items-center text-white/70">
-            <Users className="w-4 h-4 mr-2" />
-            {applicants || 0} applications
+          <div>
+            <p className="text-sm text-white/40 mb-2">Required Tech Stack</p>
+            <div className="flex flex-wrap gap-2">
+              {Array.isArray(techStack) ? techStack.map((tech, index) => (
+                <span
+                  key={index}
+                  className="px-3 py-1 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-sm"
+                >
+                  {tech}
+                </span>
+              )) : null}
+            </div>
           </div>
-          <div className="px-3 py-1 rounded-full bg-[#a6ff00]/10 text-[#a6ff00] text-sm">
-            {workType}
-          </div>
-          <div className="px-3 py-1 rounded-full bg-white/5 text-white/70 text-sm">
-            {commitment}
-          </div>
-          <div className="px-3 py-1 rounded-full bg-white/5 text-white/70 text-sm">
-            {location}
-          </div>
-        </div>
-        {categories && categories.length > 0 && (
-            <div>
-              <p className="text-sm text-white/40 mb-2">Categories</p>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-sm"
-                  >
-                    {category}
+          {applicants > 0 && (
+            <div className="pt-4 mt-4 border-t border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#a6ff00]" />
+                  <span className="text-white/70 text-sm">
+                    {applicants} {applicants === 1 ? 'developer has' : 'developers have'} applied
                   </span>
-                ))}
+                </div>
+                <Alert className="bg-[#1a1a1a] border-[#a6ff00]/20 py-2 px-4">
+                  <AlertDescription className="text-[#a6ff00] text-xs">
+                    New applications to review
+                  </AlertDescription>
+                </Alert>
               </div>
             </div>
           )}
-        <div>
-          <p className="text-sm text-white/40 mb-2">Required Tech Stack</p>
-          <div className="flex flex-wrap gap-2">
-            {Array.isArray(techStack) ? techStack.map((tech, index) => (
-              <span
-                key={index}
-                className="px-3 py-1 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-sm"
-              >
-                {tech}
-              </span>
-            )) : null}
-          </div>
         </div>
-        {applicants > 0 && (
-          <div className="pt-4 mt-4 border-t border-white/5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-[#a6ff00]" />
-                <span className="text-white/70 text-sm">
-                  {applicants} {applicants === 1 ? 'developer has' : 'developers have'} applied
-                </span>
-              </div>
-              <Alert className="bg-[#1a1a1a] border-[#a6ff00]/20 py-2 px-4">
-                <AlertDescription className="text-[#a6ff00] text-xs">
-                  New applications to review
-                </AlertDescription>
-              </Alert>
-            </div>
-          </div>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+    </Card>
+  );
+};
 
 export default FounderDashboard;

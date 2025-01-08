@@ -115,7 +115,7 @@ const Logo = () => {
       </div>
 
       <span className="text-2xl font-bold text-[#a6ff00] tracking-wide">
-        CoMatch
+        FutureCo
       </span>
     </div>
   );

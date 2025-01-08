@@ -1,6 +1,7 @@
 // app/startup/[id]/page.jsx
 "use client";
 import React, { useState, useEffect } from 'react';
+import { use } from 'react';
 import { 
   Card, 
   CardContent, 
@@ -75,27 +76,67 @@ const ApplicationForm = ({ startupId, onClose }) => {
     phone: "",
     linkedin: "",
     experience: "",
-    motivation: ""
+    motivation: "",
+    githubUsername: "" 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+  
     try {
-      const applicationsRef = collection(db, "applications");
-      await addDoc(applicationsRef, {
-        startupId,
+      if (!auth.currentUser || !auth.currentUser.providerData[0]?.providerId === 'github.com') {
+        console.error('User must be authenticated with GitHub');
+        return;
+      }
+  
+      const applicationsRef = collection(db, 'startupListings', startupId, 'applications');
+      const applicationDoc = await addDoc(applicationsRef, {
         userId: auth.currentUser.uid,
-        githubProfile: auth.currentUser.providerData[0]?.uid,
+        githubProfile: formData.githubUsername,
         fullName: auth.currentUser.displayName,
         phone: `${formData.countryCode}${formData.phone}`,
-        ...formData,
+        linkedin: formData.linkedin,
+        experience: formData.experience,
+        motivation: formData.motivation,
         submittedAt: new Date(),
-        status: 'pending'
+        status: 'pending',
       });
-      
+  
+      const startupRef = doc(db, 'startupListings', startupId);
+      const startupDoc = await getDoc(startupRef);
+  
+      if (startupDoc.exists()) {
+        const startupData = startupDoc.data();
+        const founderId = startupData.founderId;
+
+        const notificationsRef = collection(db, 'notifications');
+        await addDoc(notificationsRef, {
+          recipientId: founderId, // Specific founder ID
+          founderId: founderId, // Additional field to filter notifications
+          type: 'new_application',
+          applicantId: auth.currentUser.uid,
+          applicationId: applicationDoc.id,
+          startupId: startupId,
+          applicantName: auth.currentUser.displayName,
+          applicantGithub: formData.githubUsername,
+          roleTitle: startupData.title,
+          message: `${auth.currentUser.displayName} has applied as a technical co-founder for ${startupData.title}`,
+          timestamp: new Date(),
+          read: false,
+          preview: {
+            experience: formData.experience.substring(0, 150) + '...',
+            linkedin: formData.linkedin,
+            techStack: startupData.techStack || [],
+            equity: startupData.equity,
+          }
+        });
+      } else {
+        console.error('Startup document not found.');
+      }
+  
       onClose();
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -103,6 +144,8 @@ const ApplicationForm = ({ startupId, onClose }) => {
       setIsSubmitting(false);
     }
   };
+  
+  
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -146,7 +189,16 @@ const ApplicationForm = ({ startupId, onClose }) => {
             className="bg-[#1a1a1a] border-white/10"
           />
         </div>
-        
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-white">GitHub Username</label>
+          <Input
+            required
+            placeholder="Enter your GitHub username"
+            value={formData.githubUsername}
+            onChange={(e) => setFormData(prev => ({ ...prev, githubUsername: e.target.value }))}
+            className="bg-[#1a1a1a] border-white/10"
+          />
+        </div>
         <div className="space-y-2">
           <label className="text-sm font-medium text-white">Relevant Experience</label>
           <Textarea
@@ -175,7 +227,7 @@ const ApplicationForm = ({ startupId, onClose }) => {
           type="button"
           variant="outline"
           onClick={onClose}
-          className="border-white/10 text-white hover:bg-white/5"
+          className="border-white/10 text-white hover:bg-white bg-red-600"
         >
           Cancel
         </Button>
@@ -192,35 +244,70 @@ const ApplicationForm = ({ startupId, onClose }) => {
 };
 
 const StartupDetail = ({ params }) => {
+  const [startupId, setStartupId] = useState(null);
   const [startup, setStartup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [user, setUser] = useState(null);
+  const resolvedParams = use(params);
 
   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  
+  useEffect(() => {
+    if (resolvedParams?.id) {
+      setStartupId(resolvedParams.id);
+    }
+  }, [resolvedParams]);
+
+  useEffect(() => {
+    if (!startupId) return;
+
     const fetchStartup = async () => {
       try {
-        const startupRef = doc(db, "startupListings", params.id);
+        const startupRef = doc(db, 'startupListings', startupId);
         const startupDoc = await getDoc(startupRef);
-        
+
         if (startupDoc.exists()) {
           setStartup({
             id: startupDoc.id,
-            ...startupDoc.data()
+            ...startupDoc.data(),
           });
         } else {
-          setError("Startup not found");
+          setError('Startup not found');
         }
       } catch (err) {
-        console.error("Error fetching startup:", err);
-        setError("Failed to load startup details");
+        console.error('Error fetching startup:', err);
+        setError('Failed to load startup details');
       } finally {
         setLoading(false);
       }
     };
 
     fetchStartup();
-  }, [params.id]);
+  }, [startupId]);
+
+  const isGitHubUser = user && user.providerData[0]?.providerId === 'github.com';
+
+  const handleApplyClick = () => {
+    if (!user) {
+      alert("Please sign in with GitHub to apply");
+      return;
+    }
+    
+    if (!isGitHubUser) {
+      alert("Only GitHub users can apply for technical co-founder positions");
+      return;
+    }
+
+    setShowForm(true);
+  };
 
   if (loading) {
     return (
@@ -240,7 +327,7 @@ const StartupDetail = ({ params }) => {
           <Card className="bg-[#1f1f1f] border-white/10">
             <CardHeader>
               <CardTitle className="text-3xl text-white">
-                {error || "Startup Not Found"}
+                {error || 'Startup Not Found'}
               </CardTitle>
               <CardDescription className="text-white/70 text-lg">
                 {error || "The startup you're looking for doesn't exist or has been removed."}
@@ -334,23 +421,37 @@ const StartupDetail = ({ params }) => {
                   </div>
 
                   <Dialog open={showForm} onOpenChange={setShowForm}>
-                    <DialogTrigger asChild>
-                      <Button className="w-full bg-[#a6ff00] text-black hover:bg-white text-lg py-6">
-                        Apply Now
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-[#1f1f1f] border-white/10 text-white max-w-xl">
+                    <Button 
+                      onClick={handleApplyClick}
+                      className={`w-full text-lg py-6 ${
+                        isGitHubUser 
+                          ? 'bg-[#a6ff00] text-black hover:bg-white' 
+                          : 'bg-gray-600 text-white/70 cursor-not-allowed'
+                      }`}
+                      disabled={!isGitHubUser}
+                    >
+                      {isGitHubUser 
+                        ? 'Apply Now' 
+                        : user 
+                          ? 'GitHub Login Required' 
+                          : 'Sign in with GitHub to Apply'}
+                    </Button>
+                    
+                    <DialogContent className="bg-[#1f1f1f] border-white/10 text-white max-w-xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle className="text-2xl">Apply to {startup.title}</DialogTitle>
                         <DialogDescription className="text-white/70">
                           Submit your application to join as a technical co-founder.
                         </DialogDescription>
                       </DialogHeader>
-                      <ApplicationForm 
-                        startupId={startup.id} 
-                        onClose={() => setShowForm(false)} 
-                      />
+                      {isGitHubUser && (
+                        <ApplicationForm 
+                          startupId={startup.id} 
+                          onClose={() => setShowForm(false)} 
+                        />
+                      )}
                     </DialogContent>
+
                   </Dialog>
                 </div>
               </CardContent>

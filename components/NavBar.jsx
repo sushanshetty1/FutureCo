@@ -21,13 +21,16 @@ import Logo from './Logo';
 import { auth } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
-
+import photo from '../public/profile.png';
 
 const Navbar = () => {
   const [user] = useAuthState(auth);
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const photoURL = user?.photoURL || "/profile.png";
+  const photoURL = user?.photoURL || {photo};
+  const isGitHubUser = user?.providerData?.[0]?.providerId === 'github.com';
+  const isGoogleUser = user?.providerData?.[0]?.providerId === 'google.com';
+
   const handleLogout = async () => {
     try {
       await auth.signOut();
@@ -37,8 +40,9 @@ const Navbar = () => {
     }
   };
 
+
   const handleNotifications = () => {
-    router.push('/notifications');
+    router.push('/Notification');
   };
 
   if (!user) {
@@ -53,7 +57,7 @@ const Navbar = () => {
                 </Link>
               </div>
               <div className="flex-1 flex justify-end">
-                <Link href="/login">
+                <Link href="/Login">
                   <Button 
                     variant="outline" 
                     className="bg-[#1f1f1f] border-1 px-6 py-6 border-gray-400 rounded-full text-white hover:text-gray-600 transition-all duration-300"
@@ -68,6 +72,21 @@ const Navbar = () => {
       </nav>
     );
   }
+
+  const getNavigationLinks = () => {
+    if (isGitHubUser) {
+      return [
+        { href: "/Application", label: "Application", icon: FolderGit2 }
+      ];
+    } else if (isGoogleUser) {
+      return [
+        { href: "/DashBoard", label: "Dashboard", icon: LayoutDashboard }
+      ];
+    }
+    return [];
+  };
+  
+  const navigationLinks = getNavigationLinks();
 
   return (
     <nav className="fixed w-full top-0 z-50" role="navigation">
@@ -84,12 +103,13 @@ const Navbar = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex flex-1 justify-center">
               <div className="flex items-center space-x-16">
-                <NavLink href="/DashBoard">Dashboard</NavLink>
-                <NavLink href="/browse">Browse</NavLink>
+                {navigationLinks.map(({ href, label }) => (
+                  <NavLink key={href} href={href}>{label}</NavLink>
+                ))}
               </div>
             </div>
 
-            {/* Right Section - Notifications, Messages, Profile, Logout */}
+            {/* Right Section - Notifications, Profile, Logout */}
             <div className="hidden md:flex flex-1 justify-end items-center space-x-6">
               <Button
                 variant="ghost"
@@ -102,33 +122,27 @@ const Navbar = () => {
               </Button>
                 
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="h-8 w-8 rounded-full"
-                  >
-                    <img
-                      src={photoURL}
-                      alt="Profile"
-                      className="h-8 w-8 rounded-full"
-                    />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-black border border-white/10">
-                  <div className="px-2 py-2 text-sm text-white/70">
-                    {user.email}
-                  </div>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem onClick={() => router.push('/profile')} className="text-white hover:text-[#a6ff00] cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-400 cursor-pointer">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-10 w-10 rounded-full overflow-hidden">
+                <User className="h-10 w-10 text-gray-300" />
+              </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end" className="w-56 bg-black border border-white/10">
+                <div className="px-2 py-2 text-sm text-white/70">
+                  {user.email}
+                </div>
+                <DropdownMenuSeparator className="bg-white/10" />
+                <DropdownMenuItem onClick={() => router.push('/Profile')} className="text-white hover:text-[#a6ff00] cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-400 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             </div>
 
@@ -152,7 +166,7 @@ const Navbar = () => {
                     {/* User Profile Section */}
                     <div className="flex items-center space-x-4 px-2">
                       <img
-                        src={user.photoURL || "/api/placeholder/40/40"}
+                        src={photoURL}
                         alt="Profile"
                         className="h-10 w-10 rounded-full"
                       />
@@ -163,22 +177,20 @@ const Navbar = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <MobileNavLink href="/DashBoard" onClick={() => setIsMenuOpen(false)}>
-                        <LayoutDashboard className="mr-3 h-5 w-5" />
-                        Dashboard
-                      </MobileNavLink>
-                      <MobileNavLink href="/browse" onClick={() => setIsMenuOpen(false)}>
-                        <Search className="mr-3 h-5 w-5" />
-                        Browse
-                      </MobileNavLink>
+                      {navigationLinks.map(({ href, label, icon: Icon }) => (
+                        <MobileNavLink key={href} href={href} onClick={() => setIsMenuOpen(false)}>
+                          <Icon className="mr-3 h-5 w-5" />
+                          {label}
+                        </MobileNavLink>
+                      ))}
                     </div>
 
                     <div className="border-t border-white/10 pt-4 space-y-1">
-                      <MobileNavLink href="/notifications" onClick={() => setIsMenuOpen(false)}>
+                      <MobileNavLink href="/Notification" onClick={() => setIsMenuOpen(false)}>
                         <Bell className="mr-3 h-5 w-5" />
                         Notifications
                       </MobileNavLink>
-                      <MobileNavLink href="/profile" onClick={() => setIsMenuOpen(false)}>
+                      <MobileNavLink href="/Profile" onClick={() => setIsMenuOpen(false)}>
                         <User className="mr-3 h-5 w-5" />
                         Profile
                       </MobileNavLink>
@@ -211,7 +223,7 @@ const Navbar = () => {
 const NavLink = ({ href, children }) => (
   <Link
     href={href}
-    className="text-white/70 hover:text-white transition-colors duration-300 text-sm font-medium"
+    className="text-white/70 hover:text-white transition-colors duration-300 text-base font-medium"
   >
     {children}
   </Link>

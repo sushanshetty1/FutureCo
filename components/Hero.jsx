@@ -15,6 +15,7 @@ import {
   PieChart as PieChartIcon
 } from 'lucide-react';
 import { auth, googleProvider, githubProvider, db } from '../firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   signInWithPopup, 
   fetchSignInMethodsForEmail,
@@ -25,7 +26,7 @@ import {
 } from 'firebase/auth';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, getDocs, orderBy, limit, where } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -55,7 +56,9 @@ const Hero = () => {
         
         const listingsRef = collection(db, "startupListings");
         const listingsQuery = query(
-          listingsRef, 
+          listingsRef,
+          where("listing", "!=", "success"), // Filter out "success" listings
+          orderBy("listing"), // Required when using inequality filters
           orderBy("createdAt", "desc"),
           limit(10)
         );
@@ -80,37 +83,60 @@ const Hero = () => {
     }
   }, [user]);
 
+  // Rest of the component remains the same...
+  
   const handleAuth = async (provider) => {
     try {
       setError(null);
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+  
+      const userDocRef = doc(db, "users", user.uid);
+  
+      const userSnapshot = await getDoc(userDocRef);
+  
+      if (!userSnapshot.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName || "Anonymous",
+          email: user.email,
+          photoURL: user.photoURL || "",
+          provider: provider === googleProvider ? "Google" : "GitHub",
+          createdAt: serverTimestamp(),
+        });
+        console.log("New user added to Firestore:", user.uid);
+      } else {
+        console.log("User already exists in Firestore:", user.uid);
+      }
+  
+      router.push("/");
     } catch (error) {
-      console.error('Auth error:', error);
-
-      if (error.code === 'auth/account-exists-with-different-credential') {
+      console.error("Auth error:", error);
+  
+      if (error.code === "auth/account-exists-with-different-credential") {
         const email = error.customData.email;
         const methods = await fetchSignInMethodsForEmail(auth, email);
-
-        if (methods[0] === 'google.com') {
+  
+        if (methods[0] === "google.com") {
           setError({
             title: "Account Exists",
             description: "Please sign in with Google first, then link your GitHub account.",
             action: "Sign in with Google",
-            provider: googleProvider
+            provider: googleProvider,
           });
-        } else if (methods[0] === 'github.com') {
+        } else if (methods[0] === "github.com") {
           setError({
             title: "Account Exists",
             description: "Please sign in with GitHub first, then link your Google account.",
             action: "Sign in with GitHub",
-            provider: githubProvider
+            provider: githubProvider,
           });
         }
       } else {
         setError({
           title: "Authentication Error",
-          description: "An error occurred during sign in. Please try again.",
-          action: null
+          description: "An error occurred during sign-in. Please try again.",
+          action: null,
         });
       }
     }
@@ -247,7 +273,7 @@ const Hero = () => {
             
             <Button 
               variant="outline" 
-              className="group border-2 border-[#a6ff00] text-[#a6ff00] hover:bg-[#a6ff00]/10 text-lg px-8 py-6 relative overflow-hidden transition-all duration-300 hover:pr-12"
+              className="group border-black text-black hover:bg-[#a6ff00] text-lg px-8 py-6 relative overflow-hidden transition-all duration-300 hover:pr-12"
               onClick={() => handleAuth(githubProvider)}
               disabled={!!error}
             >

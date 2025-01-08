@@ -6,6 +6,8 @@ import { auth, googleProvider, githubProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
+import { db } from '../../firebase'; // Ensure db is exported from your firebase setup
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const LoginPage = () => {
   const router = useRouter();
@@ -17,8 +19,26 @@ const LoginPage = () => {
       setLoading(true);
       setError('');
       const result = await signInWithPopup(auth, provider);
-      console.log(`${providerName} Login successful:`, result.user);
-      router.push('/dashboard'); // Redirect to dashboard after successful login
+      const user = result.user;
+
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnapshot = await getDoc(userDocRef);
+
+      if (!userSnapshot.exists()) {
+        await setDoc(userDocRef, {
+          uid: user.uid,
+          displayName: user.displayName || 'Anonymous',
+          email: user.email,
+          provider: providerName,
+          createdAt: serverTimestamp(),
+        });
+        console.log('New user added to Firestore:', user.uid);
+      } else {
+        console.log('User already exists in Firestore:', user.uid);
+      }
+
+      console.log(`${providerName} Login successful:`, user);
+      router.push('/Dashboard');
     } catch (error) {
       setError(error.message);
       console.error(`Error logging in with ${providerName}:`, error);
