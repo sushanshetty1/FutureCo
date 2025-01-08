@@ -88,6 +88,7 @@ const FounderDashboard = () => {
     employeeCount: "",
     whatsappNumber: "",
     countryCode: "+1",
+    listing: "unsuccessful",
   });
 
   const validateWhatsAppNumber = (number) => {
@@ -148,7 +149,6 @@ const FounderDashboard = () => {
   const handleNewListing = async (e) => {
     e.preventDefault();
     
-    // Check if user is signed in with Google
     if (!user || user.providerData[0].providerId !== 'google.com') {
       setFormError('Only Google-authenticated users can create listings.');
       return;

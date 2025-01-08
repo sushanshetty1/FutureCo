@@ -57,8 +57,8 @@ const Hero = () => {
         const listingsRef = collection(db, "startupListings");
         const listingsQuery = query(
           listingsRef,
-          where("listing", "!=", "success"), // Filter out "success" listings
-          orderBy("listing"), // Required when using inequality filters
+          where("listing", "!=", "success"),
+          orderBy("listing"),
           orderBy("createdAt", "desc"),
           limit(10)
         );

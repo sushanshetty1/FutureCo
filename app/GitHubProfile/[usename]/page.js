@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from 'next/router';
 import {
   Code2, Star, GitFork, ArrowUpRight,
   Loader2, GithubIcon, Globe, BookOpen
@@ -11,31 +10,26 @@ import {
 } from "@/components/ui/card";
 
 const GitHubProfile = () => {
-  const [isClient, setIsClient] = useState(false);
   const [githubData, setGithubData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [username, setUsername] = useState(null);
-  const NEXT_PUBLIC_GITHUB_TOKEN="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"
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const NEXT_PUBLIC_GITHUB_TOKEN = "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";
+
+  // Extract the username from the URL
+  const username = window.location.pathname.split('/')[2];
 
   useEffect(() => {
-    if (isClient && window.location) {
-      const { username } = window.location.pathname.split("/").pop();
-      setUsername(username);
-    }
-  }, [isClient]);
-
-  useEffect(() => {
-    if (!username) return;
-
     const fetchGithubData = async () => {
+      if (!username) {
+        setError("Username not provided");
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const headers = {};
         if (NEXT_PUBLIC_GITHUB_TOKEN) {
-          headers.Authorization = `token ${NEXT_PUBLIC_GITHUB_TOKEN}`;
+          headers.Authorization = `Bearer ${NEXT_PUBLIC_GITHUB_TOKEN}`;
         }
 
         const userResponse = await fetch(`https://api.github.com/users/${username}`, { headers });
@@ -79,8 +73,6 @@ const GitHubProfile = () => {
 
     fetchGithubData();
   }, [username]);
-
-
 
   if (isLoading) {
     return (
