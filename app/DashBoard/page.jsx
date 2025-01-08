@@ -1,4 +1,3 @@
-//DashBoard
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -128,7 +127,6 @@ const FounderDashboard = () => {
           const applicationsSnap = await getDocs(applicationsQuery);
           setTotalApplications(applicationsSnap.size);
           
-          // Only set loading to false after everything is loaded
           setIsLoading(false);
         });
       } catch (error) {
@@ -180,7 +178,7 @@ const FounderDashboard = () => {
       await addDoc(collection(db, 'startupListings'), {
         ...newListing,
         equity: equityValue,
-        salary: newListing.salary,  // Store the salary in the database
+        salary: newListing.salary,
         founderId: user.uid,
         founderName: user.displayName,
         founderEmail: user.email,
@@ -601,7 +599,6 @@ const StartupListing = ({
     
     setLoading(true);
     try {
-      // First verify the user is the founder of this listing
       const listingRef = doc(db, 'startupListings', id);
       const listingDoc = await getDoc(listingRef);
       
@@ -618,8 +615,6 @@ const StartupListing = ({
       const applicationsData = await Promise.all(
         applicationsSnap.docs.map(async (appDoc) => {
           const applicationData = appDoc.data();
-          
-          // Only attempt to fetch user data if we have a userId
           let userData = {};
           if (applicationData.userId) {
             try {
@@ -636,7 +631,6 @@ const StartupListing = ({
           return {
             id: appDoc.id,
             ...applicationData,
-            // Use application data first, then fall back to user data
             applicantName: applicationData.applicantName || userData.displayName || 'Anonymous',
             applicantEmail: applicationData.applicantEmail || userData.email || 'No email provided'
           };
@@ -663,7 +657,6 @@ const StartupListing = ({
     try {
       const batch = writeBatch(db);
       
-      // Get listing data
       const listingRef = doc(db, 'startupListings', listingId);
       const listingDoc = await getDoc(listingRef);
       
@@ -673,7 +666,6 @@ const StartupListing = ({
   
       const listingData = { id: listingId, ...listingDoc.data() };
       
-      // Get application data - Fix: Corrected path to applications subcollection
       const approvedAppRef = doc(db, 'startupListings', listingId, 'applications', applicationId);
       const approvedAppDoc = await getDoc(approvedAppRef);
       
@@ -683,14 +675,12 @@ const StartupListing = ({
   
       const approvedAppData = approvedAppDoc.data();
   
-      // Update application status
       batch.update(approvedAppRef, {
         status: 'approved',
         reviewedAt: serverTimestamp(),
         reviewedBy: auth.currentUser.uid
       });
   
-      // Create notification
       const notificationData = {
         recipientId: applicantId,
         founderId: auth.currentUser.uid,
@@ -709,16 +699,14 @@ const StartupListing = ({
       const notificationRef = doc(collection(db, 'notifications'));
       batch.set(notificationRef, notificationData);
   
-      // Update listing status and add the new field
       batch.update(listingRef, {
         status: 'filled',
         filledAt: serverTimestamp(),
         filledBy: applicantId,
         filledByName: approvedAppData.applicantName || 'Anonymous',
-        listing: "success"  // Add the new field here
+        listing: "success"
       });
   
-      // Reject other applications
       const applicationsQuery = query(collection(db, 'startupListings', listingId, 'applications'));
       const applicationsSnap = await getDocs(applicationsQuery);
       
@@ -726,14 +714,12 @@ const StartupListing = ({
         if (appDoc.id !== applicationId) {
           const appData = appDoc.data();
           
-          // Update application status
           batch.update(doc(db, 'startupListings', listingId, 'applications', appDoc.id), {
             status: 'rejected',
             reviewedAt: serverTimestamp(),
             reviewedBy: auth.currentUser.uid
           });
   
-          // Create rejection notification
           if (appData.userId) {
             const rejectionNotificationRef = doc(collection(db, 'notifications'));
             batch.set(rejectionNotificationRef, {
@@ -771,7 +757,6 @@ const StartupListing = ({
     try {
       const batch = writeBatch(db);
       
-      // Get listing data
       const listingRef = doc(db, 'startupListings', listingId);
       const listingDoc = await getDoc(listingRef);
       
@@ -781,7 +766,6 @@ const StartupListing = ({
   
       const listingData = listingDoc.data();
       
-      // Update application status - Fix: Corrected path to applications subcollection
       const applicationRef = doc(db, 'startupListings', listingId, 'applications', applicationId);
       batch.update(applicationRef, {
         status: 'rejected',
@@ -789,7 +773,6 @@ const StartupListing = ({
         reviewedBy: auth.currentUser.uid
       });
   
-      // Create rejection notification
       const notificationRef = doc(collection(db, 'notifications'));
       batch.set(notificationRef, {
         recipientId: applicantId,
@@ -813,7 +796,6 @@ const StartupListing = ({
     }
   };
   
-  // Updated handler functions
   const handleApplicationApproval = async (application) => {
     if (!application || !application.id) {
       console.error('Missing application data');
@@ -825,7 +807,7 @@ const StartupListing = ({
       const success = await handleApprove(application.id, id, application.userId);
       if (success) {
         await fetchApplications();
-        setShowApplications(false); // Close the dialog after successful approval
+        setShowApplications(false);
         return true;
       }
       return false;

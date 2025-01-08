@@ -57,10 +57,8 @@ const ApplicationRequests = () => {
 
     setDeleteLoading(true);
     try {
-      // Delete the application document from the subcollection
       await deleteDoc(doc(db, 'startupListings', startupId, 'applications', applicationId));
       
-      // Update the local state to remove the deleted application
       setApplications(prevApplications => 
         prevApplications.filter(app => app.id !== applicationId)
       );
@@ -87,12 +85,10 @@ const ApplicationRequests = () => {
         };
         setSelectedStartup(startupData);
         setSelectedApplication(application);
-        setFounderDetails(null); // Reset founder details
+        setFounderDetails(null);
 
-        // Only fetch founder details if application is approved
         if (application.status === "approved") {
           try {
-            // Get founder details from the users collection instead
             const founderDoc = await getDoc(doc(db, 'users', startupData.founderId));
             if (founderDoc.exists()) {
               const founderData = founderDoc.data();
@@ -114,64 +110,6 @@ const ApplicationRequests = () => {
       console.error("Error fetching startup details:", err);
       setError("Failed to load startup details. Please try again later.");
     }
-  };
-
-  const ContactSection = ({ application }) => {
-    if (!application || application.status !== 'approved') {
-      return null;
-    }
-  
-    return (
-      <div className="space-y-4 border-t border-white/10 pt-4 mt-6">
-        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-500" />
-          Founder Contact Details
-        </h3>
-        {founderDetails ? (
-          <div className="grid grid-cols-1 gap-4 bg-white/5 p-4 rounded-lg">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-[#a6ff00]" />
-                  <span className="text-white/70">Phone Number:</span>
-                </div>
-                <span className="text-white font-medium">
-                  {founderDetails.phone}
-                </span>
-              </div>
-            </div>
-            <div className="text-sm text-white/50 mt-2">
-              You can now contact the founder directly to discuss next steps.
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 text-white/50 italic">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Loading contact details...
-          </div>
-        )}
-      </div>
-    );
-  };
-  
-  const renderTechStack = (techStack) => {
-    if (!techStack) return null;
-    
-    const technologies = Array.isArray(techStack) 
-      ? techStack 
-      : typeof techStack === 'string' 
-        ? techStack.split(',') 
-        : [];
-
-    return technologies.map((tech, index) => (
-      <Badge 
-        key={index} 
-        variant="outline" 
-        className="bg-white/5"
-      >
-        {typeof tech === 'string' ? tech.trim() : tech}
-      </Badge>
-    ));
   };
     
   useEffect(() => {
@@ -210,7 +148,7 @@ const ApplicationRequests = () => {
           applicationSnapshots.forEach((doc) => {
             userApplications.push({
               id: doc.id,
-              startupId: startupDoc.id, // Add the startup document ID
+              startupId: startupDoc.id,
               ...doc.data(),
               startupTitle: startupDoc.data().title,
             });
