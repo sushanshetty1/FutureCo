@@ -12,7 +12,8 @@ import {
   MapPin,
   Clock,
   ChevronRight,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Plus
 } from 'lucide-react';
 import { auth, googleProvider, githubProvider, db } from '../firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -176,6 +177,18 @@ const Hero = () => {
     return (
       <div className="min-h-screen bg-black pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {user.providerData[0].providerId === 'google.com' && (
+            <div className="absolute top-24 right-40">
+              <Button
+                className="bg-[#a6ff00] text-black hover:bg-white"
+                onClick={() => router.push('/DashBoard')}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Request
+              </Button>
+            </div>
+          )}
+          
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-white mb-4">Featured Startups</h1>
             <p className="text-white/70 text-lg mb-8">
