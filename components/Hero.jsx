@@ -177,23 +177,30 @@ const Hero = () => {
     return (
       <div className="min-h-screen bg-black pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {user.providerData[0].providerId === 'google.com' && (
-            <div className="absolute top-24 right-40">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+            <h1 className="text-4xl font-bold text-white mb-4 sm:mb-0">Featured Startups</h1>
+            {user.providerData[0].providerId === 'google.com' ? (
               <Button
-                className="bg-[#a6ff00] text-black hover:bg-white"
+                className="bg-[#a6ff00] text-black hover:bg-white w-full sm:w-auto"
                 onClick={() => router.push('/DashBoard')}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Request
               </Button>
-            </div>
-          )}
+            ) : (
+              <Button
+                className="bg-[#a6ff00] text-black hover:bg-white w-full sm:w-auto"
+                onClick={() => router.push('/Application')}
+              >
+                <Clock className="w-4 h-4 mr-2" />
+                Check Status
+              </Button>
+            )}
+          </div>
           
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-white mb-4">Featured Startups</h1>
-            <p className="text-white/70 text-lg mb-8">
-              Explore exciting opportunities to join innovative startups as a technical co-founder
-            </p>
+          <p className="text-white/70 text-lg mb-8">
+            Explore exciting opportunities to join innovative startups as a technical co-founder
+          </p>
             
             {error && (
               <Alert className="mb-6 bg-red-900/20 border-red-900">
@@ -223,7 +230,6 @@ const Hero = () => {
             )}
           </div>
         </div>
-      </div>
     );
   }
 
