@@ -19,7 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Loader2, XCircle, Clock, Building2, Users, Calendar, MapPin, Briefcase, Trash2, Mail } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from '@/components/Navbar';
+import Navbar from '../../components/Navbar';
 import { Phone, CheckCircle } from 'lucide-react';
 
 const StatusIcon = ({ status }) => {

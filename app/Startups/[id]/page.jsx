@@ -37,7 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { auth, db } from '@/firebase';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import Navbar from '@/components/Navbar';
+import Navbar from '../../components/Navbar';
 
 const countryCodes = [
   { value: "+1", label: "US/CA (+1)" },
