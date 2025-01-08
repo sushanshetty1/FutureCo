@@ -20,26 +20,40 @@ const categories = [
   "FinTech"
 ];
 
-const CategorySelector = ({ selectedCategories, setSelectedCategories }) => {
+const CategorySelector = ({ selectedCategories = [], setSelectedCategories }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
+
+  // Ensure selectedCategories is always an array
+  const safeSelectedCategories = Array.isArray(selectedCategories) ? selectedCategories : [];
 
   const filteredCategories = categories.filter(category =>
     category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleCategory = (category) => {
-    setSelectedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
+    if (!setSelectedCategories) return;
+    
+    setSelectedCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.includes(category)
+        ? prevArray.filter(c => c !== category)
+        : [...prevArray, category];
+    });
   };
 
   const removeCategory = (categoryToRemove) => {
-    setSelectedCategories(prev =>
-      prev.filter(category => category !== categoryToRemove)
-    );
+    if (!setSelectedCategories) return;
+    
+    setSelectedCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.filter(category => category !== categoryToRemove);
+    });
+  };
+
+  // Handler for clicking outside the dropdown
+  const handleClickOutside = () => {
+    setIsOpen(false);
   };
 
   return (
@@ -48,7 +62,7 @@ const CategorySelector = ({ selectedCategories, setSelectedCategories }) => {
       
       {/* Selected Categories */}
       <div className="flex flex-wrap gap-2 min-h-[32px]">
-        {selectedCategories.map(category => (
+        {safeSelectedCategories.map(category => (
           <span
             key={category}
             className="bg-[#a6ff00]/10 text-[#a6ff00] px-3 py-1 rounded-full text-sm flex items-center gap-2"
@@ -76,23 +90,29 @@ const CategorySelector = ({ selectedCategories, setSelectedCategories }) => {
         />
         
         {isOpen && (
-          <div className="absolute z-10 w-full mt-1 bg-[#1f1f1f] border border-white/10 rounded-md max-h-60 overflow-y-auto">
-            {filteredCategories.map(category => (
-              <button
-                key={category}
-                className="w-full px-4 py-2 text-left text-white hover:bg-white/5 flex items-center justify-between"
-                onClick={() => toggleCategory(category)}
-              >
-                {category}
-                {selectedCategories.includes(category) && (
-                  <Check className="w-4 h-4 text-[#a6ff00]" />
-                )}
-              </button>
-            ))}
-            {filteredCategories.length === 0 && (
-              <div className="px-4 py-2 text-white/50">No categories found</div>
-            )}
-          </div>
+          <>
+            <div 
+              className="fixed inset-0 z-0"
+              onClick={handleClickOutside}
+            />
+            <div className="absolute z-10 w-full mt-1 bg-[#1f1f1f] border border-white/10 rounded-md max-h-60 overflow-y-auto">
+              {filteredCategories.map(category => (
+                <button
+                  key={category}
+                  className="w-full px-4 py-2 text-left text-white hover:bg-white/5 flex items-center justify-between"
+                  onClick={() => toggleCategory(category)}
+                >
+                  {category}
+                  {safeSelectedCategories.includes(category) && (
+                    <Check className="w-4 h-4 text-[#a6ff00]" />
+                  )}
+                </button>
+              ))}
+              {filteredCategories.length === 0 && (
+                <div className="px-4 py-2 text-white/50">No categories found</div>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

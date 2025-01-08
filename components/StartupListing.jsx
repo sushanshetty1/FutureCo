@@ -4,7 +4,7 @@ import { Building, MapPin, PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
 
-const StartupListing = ({ id, title, description, equity, location, companySize, founded }) => {
+const StartupListing = ({ id, title, description, equity, location, employeeCount}) => {
   const router = useRouter();
   
   const handleViewDetails = () => {
@@ -20,7 +20,7 @@ const StartupListing = ({ id, title, description, equity, location, companySize,
             <div className="flex items-center gap-4 mb-4 text-sm text-white/50">
               <div className="flex items-center gap-2">
                 <Building className="w-4 h-4" />
-                <span>{companySize} employees</span>
+                <span>{employeeCount} employees</span>
               </div>
               <div className="text-white/30">•</div>
               <div className="flex items-center gap-2">

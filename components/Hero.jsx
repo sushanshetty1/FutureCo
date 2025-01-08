@@ -171,16 +171,16 @@ const Hero = () => {
                 <Loader2 className="w-8 h-8 text-[#a6ff00] animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {listings.map(listing => (
-                  <StartupListing key={listing.id} {...listing} />
-                ))}
-                {listings.length === 0 && !error && (
-                  <div className="text-center py-16 bg-[#1f1f1f] rounded-lg border border-white/10">
-                    <p className="text-white/70">No startup listings available at the moment.</p>
-                  </div>
-                )}
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {listings.map(listing => (
+                <StartupListing key={listing.id} {...listing} />
+              ))}
+              {listings.length === 0 && !error && (
+                <div className="text-center py-16 bg-[#1f1f1f] rounded-lg border border-white/10">
+                  <p className="text-white/70">No startup listings available at the moment.</p>
+                </div>
+              )}
+            </div>
             )}
           </div>
         </div>
