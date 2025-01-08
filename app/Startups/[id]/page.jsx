@@ -409,6 +409,12 @@ const StartupDetail = ({ params }) => {
                       value={`${startup.equity}% ownership`}
                     />
                     <InfoCard 
+                      icon={DollarSign}
+                      label="Salary Offered"
+                      value={`$${startup.salary} per year`}
+                    />
+
+                    <InfoCard 
                       icon={Users}
                       label="Team Size"
                       value={`${startup.employeeCount}`}

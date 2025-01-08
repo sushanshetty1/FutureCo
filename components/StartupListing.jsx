@@ -4,7 +4,7 @@ import { Building, MapPin, PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from 'next/navigation';
 
-const StartupListing = ({ id, title, description, equity, location, employeeCount}) => {
+const StartupListing = ({ id, title, description, equity, location, employeeCount, salary}) => {
   const router = useRouter();
   
   const handleViewDetails = () => {
@@ -40,6 +40,11 @@ const StartupListing = ({ id, title, description, equity, location, employeeCoun
       </CardHeader>
       
       <CardContent>
+        <div className="flex items-center gap-4 mb-4 text-sm text-white/50">
+          <div className="flex items-center gap-2">
+            <span>Salary: {salary ? `$${salary.toLocaleString()}` : "Salary Not Listed"}</span>
+          </div>
+        </div>
         <Button 
           onClick={handleViewDetails}
           className="w-full bg-[#a6ff00] text-black hover:bg-white transition-all duration-300"

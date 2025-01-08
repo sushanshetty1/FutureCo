@@ -89,6 +89,7 @@ const FounderDashboard = () => {
     whatsappNumber: "",
     countryCode: "+1",
     listing: "unsuccessful",
+    salary: "",
   });
 
   const validateWhatsAppNumber = (number) => {
@@ -170,10 +171,16 @@ const FounderDashboard = () => {
       return;
     }
   
+    if (isNaN(newListing.salary) || newListing.salary <= 0) {
+      setFormError('Salary must be a valid positive number');
+      return;
+    }
+  
     try {
       await addDoc(collection(db, 'startupListings'), {
         ...newListing,
         equity: equityValue,
+        salary: newListing.salary,  // Store the salary in the database
         founderId: user.uid,
         founderName: user.displayName,
         founderEmail: user.email,
@@ -198,6 +205,7 @@ const FounderDashboard = () => {
         employeeCount: '',
         whatsappNumber: '',
         countryCode: '+1',
+        salary: '',
         listing: "unfilled"
       });
       setAcceptedTerms(false);
@@ -211,6 +219,7 @@ const FounderDashboard = () => {
       }
     }
   };
+  
 
   return (
     <>
@@ -282,6 +291,22 @@ const FounderDashboard = () => {
                           required
                         />
                       </div>
+                      <div className="space-y-4">
+                        <h3 className="text-lg text-white">Salary</h3>
+                        <div>
+                          <Label className="text-white text-base">Salary per Month (USD)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
+                            placeholder="Enter salary in USD"
+                            value={newListing.salary}
+                            onChange={(e) => setNewListing(prev => ({ ...prev, salary: e.target.value }))}
+                            required
+                          />
+                        </div>
+                      </div>
+
                       <div>
                         <Label className="text-white text-base">Location</Label>
                         <Input
