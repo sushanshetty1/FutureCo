@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../../components/Navbar';
+import Navbar from '@/components/Navbar';
 import { auth, googleProvider, githubProvider } from '../../firebase';
 import { signInWithPopup } from 'firebase/auth';
 import { FcGoogle } from 'react-icons/fc';

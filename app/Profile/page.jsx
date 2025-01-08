@@ -26,7 +26,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from "../../components/Navbar";
+import Navbar from "@/components/Navbar";
 
 const DeveloperDashboard = () => {
   const router = useRouter();

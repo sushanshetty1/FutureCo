@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { auth, db } from '../../firebase';
 import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import Navbar from '../../components/Navbar';
+import Navbar from '@/components/Navbar';
 
 const NotificationsEmptyState = () => (
   <Card className="bg-black border border-white/10">

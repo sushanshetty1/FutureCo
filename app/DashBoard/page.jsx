@@ -64,7 +64,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import ApplicationsList from '@/components/ApplicationsList';
-import Navbar from "../../components/Navbar";
+import Navbar from "@/components/Navbar";
 
 
 const FounderDashboard = () => {
