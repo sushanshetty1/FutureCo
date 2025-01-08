@@ -26,7 +26,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { onAuthStateChanged } from 'firebase/auth';
-import Navbar from "@/components/NavBar";
+import Navbar from "@/components/Navbar";
 
 const DeveloperDashboard = () => {
   const router = useRouter();
@@ -97,7 +97,6 @@ const DeveloperDashboard = () => {
           throw new Error('Could not determine GitHub username');
         }
 
-        // Fetch GitHub user data with rate limiting considerations
         const headers = {};
         if (NEXT_PUBLIC_GITHUB_TOKEN) {
           headers.Authorization = `token ${NEXT_PUBLIC_GITHUB_TOKEN}`;
