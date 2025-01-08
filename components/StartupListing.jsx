@@ -14,27 +14,27 @@ const StartupListing = ({ id, title, description, equity, location, employeeCoun
   return (
     <Card className="bg-[#1f1f1f] border-white/10 hover:border-[#a6ff00]/50 transition-all duration-300">
       <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <CardTitle className="text-2xl text-white mb-3">{title}</CardTitle>
-            <div className="flex items-center gap-4 mb-4 text-sm text-white/50">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          <div className="flex-1 w-full">
+            <CardTitle className="text-xl sm:text-2xl text-white mb-3 break-words">{title}</CardTitle>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-4 text-sm text-white/50">
               <div className="flex items-center gap-2">
                 <Building className="w-4 h-4" />
                 <span>{employeeCount} employees</span>
               </div>
-              <div className="text-white/30">•</div>
+              <div className="hidden sm:block text-white/30">•</div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4" />
-                <span>{location}</span>
+                <span className="break-words">{location}</span>
               </div>
             </div>
             <CardDescription className="text-white/70 line-clamp-2">
               {description}
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-2 rounded-lg">
+          <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-2 rounded-lg self-start">
             <PieChartIcon className="w-4 h-4 text-[#a6ff00]" />
-            <span className="text-white font-medium">{equity}%</span>
+            <span className="text-white font-medium whitespace-nowrap">{equity}%</span>
           </div>
         </div>
       </CardHeader>

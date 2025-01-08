@@ -1,42 +1,15 @@
-// app/startup/[id]/page.jsx
 "use client";
 import React, { useState, useEffect } from 'react';
 import { use } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Code, 
-  MapPin,
-  Clock,
-  Building,
-  PieChart as PieChartIcon,
-  Phone,
-  Linkedin,
-  Loader2,
-  Globe,
-  Users,
-  Target,
-  DollarSign
-} from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Code, MapPin, Clock, Building, PieChart as PieChartIcon, Phone, Linkedin, Loader2, Globe, Users, Target, DollarSign } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { auth, db } from '@/firebase';
 import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Nav from '@/components/Nav';
 
 const countryCodes = [
@@ -46,24 +19,23 @@ const countryCodes = [
   { value: "+61", label: "AU (+61)" },
   { value: "+33", label: "FR (+33)" },
   { value: "+49", label: "DE (+49)" },
-  // Add more as needed
 ];
 
 const TechBadge = ({ tech }) => (
-  <div className="px-3 py-1.5 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-sm flex items-center gap-1.5 hover:border-[#a6ff00]/50 hover:bg-[#1a1a1a]/80 transition-all duration-300">
-    <Code className="w-3.5 h-3.5 text-[#a6ff00]" />
+  <div className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-xs sm:text-sm flex items-center gap-1.5 hover:border-[#a6ff00]/50 hover:bg-[#1a1a1a]/80 transition-all duration-300">
+    <Code className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#a6ff00]" />
     {tech}
   </div>
 );
 
 const InfoCard = ({ icon: Icon, label, value }) => (
-  <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 hover:border-[#a6ff00]/30 transition-all duration-300">
+  <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-3 sm:p-4 hover:border-[#a6ff00]/30 transition-all duration-300">
     <div className="flex items-start gap-3">
-      <div className="p-2 rounded-lg bg-[#2a2a2a]">
-        <Icon className="w-5 h-5 text-[#a6ff00]" />
+      <div className="p-1.5 sm:p-2 rounded-lg bg-[#2a2a2a]">
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-[#a6ff00]" />
       </div>
       <div>
-        <p className="text-sm font-medium text-white">{value}</p>
+        <p className="text-xs sm:text-sm font-medium text-white break-words">{value}</p>
         <p className="text-xs text-white/50 mt-0.5">{label}</p>
       </div>
     </div>
@@ -148,16 +120,16 @@ const ApplicationForm = ({ startupId, onClose }) => {
   
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium text-white">Phone Number</label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select 
               value={formData.countryCode}
               onValueChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}
             >
-              <SelectTrigger className="w-[140px] bg-[#1a1a1a] border-white/10">
+              <SelectTrigger className="w-full sm:w-[140px] bg-[#1a1a1a] border-white/10">
                 <SelectValue placeholder="Code" />
               </SelectTrigger>
               <SelectContent className="bg-[#1a1a1a] border-white/10">
@@ -222,19 +194,19 @@ const ApplicationForm = ({ startupId, onClose }) => {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
         <Button
           type="button"
           variant="outline"
           onClick={onClose}
-          className="border-white/10 text-white hover:bg-white bg-red-600"
+          className="w-full sm:w-auto border-white/10 text-white hover:bg-white bg-red-600"
         >
           Cancel
         </Button>
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="bg-[#a6ff00] text-black hover:bg-white"
+          className="w-full sm:w-auto bg-[#a6ff00] text-black hover:bg-white"
         >
           {isSubmitting ? 'Submitting...' : 'Submit Application'}
         </Button>
@@ -311,29 +283,10 @@ const StartupDetail = ({ params }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black pt-24 flex items-center justify-center">
+      <div className="min-h-screen bg-black pt-16 sm:pt-24 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 text-[#a6ff00] animate-spin mx-auto" />
+          <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-[#a6ff00] animate-spin mx-auto" />
           <p className="text-white/70">Loading startup details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !startup) {
-    return (
-      <div className="min-h-screen bg-black pt-24">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="bg-[#1f1f1f] border-white/10">
-            <CardHeader>
-              <CardTitle className="text-3xl text-white">
-                {error || 'Startup Not Found'}
-              </CardTitle>
-              <CardDescription className="text-white/70 text-lg">
-                {error || "The startup you're looking for doesn't exist or has been removed."}
-              </CardDescription>
-            </CardHeader>
-          </Card>
         </div>
       </div>
     );
@@ -341,131 +294,125 @@ const StartupDetail = ({ params }) => {
 
   return (
     <>
-        <Nav/>
-
-    <div className="min-h-screen bg-black pt-24 pb-12">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">{startup.title}</h1>
-          <div className="flex items-center gap-4 text-white/50 mb-6">
-            <div className="flex items-center gap-2">
-              <Building className="w-4 h-4" />
-              <span>{startup.employeeCount} employees</span>
+      <Nav/>
+      <div className="min-h-screen bg-black pt-16 sm:pt-24 pb-8 sm:pb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl font-bold text-white mb-4">{startup.title}</h1>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-white/50 mb-6">
+              <div className="flex items-center gap-2">
+                <Building className="w-4 h-4" />
+                <span>{startup.employeeCount} employees</span>
+              </div>
+              <div className="hidden sm:block text-white/30">•</div>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span>{startup.location}</span>
+              </div>
+              <div className="hidden sm:block text-white/30">•</div>
+              <div>Founded {startup.foundingDate}</div>
             </div>
-            <div className="text-white/30">•</div>
-            <div className="flex items-center gap-2">
-              <Globe className="w-4 h-4" />
-              <span>{startup.location}</span>
-            </div>
-            <div className="text-white/30">•</div>
-            <div>Founded {startup.foundingDate}</div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            <Card className="bg-[#1f1f1f] border-white/10">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">About the Opportunity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-white/70 text-lg leading-relaxed whitespace-pre-line">
-                  {startup.description}
-                </p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+              {/* Main content cards */}
+              <Card className="bg-[#1f1f1f] border-white/10">
+                <CardHeader className="space-y-1 sm:space-y-2">
+                  <CardTitle className="text-lg sm:text-xl text-white">About the Opportunity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-white/70 text-base sm:text-lg leading-relaxed whitespace-pre-line">
+                    {startup.description}
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-[#1f1f1f] border-white/10">
-              <CardHeader>
-                <CardTitle className="text-xl text-white">Technical Requirements</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-medium text-white/70 mb-3">Required Tech Stack</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {startup.techStack?.map((tech, index) => (
-                        <TechBadge key={index} tech={tech} />
-                      ))}
+              <Card className="bg-[#1f1f1f] border-white/10">
+                <CardHeader className="space-y-1 sm:space-y-2">
+                  <CardTitle className="text-lg sm:text-xl text-white">Technical Requirements</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4 sm:space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium text-white/70 mb-3">Required Tech Stack</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {startup.techStack?.map((tech, index) => (
+                          <TechBadge key={index} tech={tech} />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card className="bg-[#1f1f1f] border-white/10 sticky top-24">
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4">
-                    <InfoCard 
-                      icon={DollarSign}
-                      label="Equity Offered"
-                      value={`${startup.equity}% ownership`}
-                    />
-                    <InfoCard 
-                      icon={DollarSign}
-                      label="Salary Offered"
-                      value={`$${startup.salary} per year`}
-                    />
+            <div className="space-y-6">
+              <Card className="bg-[#1f1f1f] border-white/10 sticky top-20 sm:top-24">
+                <CardContent className="pt-6">
+                  <div className="space-y-4 sm:space-y-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-1 gap-3 sm:gap-4">
+                      <InfoCard 
+                        icon={DollarSign}
+                        label="Equity Offered"
+                        value={`${startup.equity}% ownership`}
+                      />
+                      <InfoCard 
+                        icon={DollarSign}
+                        label="Salary Offered"
+                        value={`$${startup.salary} per year`}
+                      />
+                      <InfoCard 
+                        icon={Users}
+                        label="Team Size"
+                        value={`${startup.employeeCount}`}
+                      />
+                      <InfoCard 
+                        icon={Clock}
+                        label="Commitment"
+                        value={`${startup.workType} · ${startup.commitment}`}
+                      />
+                    </div>
 
-                    <InfoCard 
-                      icon={Users}
-                      label="Team Size"
-                      value={`${startup.employeeCount}`}
-                    />
-                    <InfoCard 
-                      icon={Clock}
-                      label="Commitment"
-                      value={`${startup.workType} · ${startup.commitment}`}
-                    />
+                    <Dialog open={showForm} onOpenChange={setShowForm}>
+                      <Button 
+                        onClick={handleApplyClick}
+                        className={`w-full text-base sm:text-lg py-4 sm:py-6 ${
+                          isGitHubUser 
+                            ? 'bg-[#a6ff00] text-black hover:bg-white' 
+                            : 'bg-gray-600 text-white/70 cursor-not-allowed'
+                        }`}
+                        disabled={!isGitHubUser}
+                      >
+                        {isGitHubUser 
+                          ? 'Apply Now' 
+                          : user 
+                            ? 'GitHub Login Required' 
+                            : 'Sign in with GitHub to Apply'}
+                      </Button>
+                      
+                      <DialogContent className="bg-[#1f1f1f] border-white/10 text-white max-w-xl max-h-[90vh] overflow-y-auto m-4">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl sm:text-2xl">Apply to {startup.title}</DialogTitle>
+                          <DialogDescription className="text-white/70">
+                            Submit your application to join as a technical co-founder.
+                          </DialogDescription>
+                        </DialogHeader>
+                        {isGitHubUser && (
+                          <ApplicationForm 
+                            startupId={startup.id} 
+                            onClose={() => setShowForm(false)} 
+                          />
+                        )}
+                      </DialogContent>
+                    </Dialog>
                   </div>
-
-                  <Dialog open={showForm} onOpenChange={setShowForm}>
-                    <Button 
-                      onClick={handleApplyClick}
-                      className={`w-full text-lg py-6 ${
-                        isGitHubUser 
-                          ? 'bg-[#a6ff00] text-black hover:bg-white' 
-                          : 'bg-gray-600 text-white/70 cursor-not-allowed'
-                      }`}
-                      disabled={!isGitHubUser}
-                    >
-                      {isGitHubUser 
-                        ? 'Apply Now' 
-                        : user 
-                          ? 'GitHub Login Required' 
-                          : 'Sign in with GitHub to Apply'}
-                    </Button>
-                    
-                    <DialogContent className="bg-[#1f1f1f] border-white/10 text-white max-w-xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-2xl">Apply to {startup.title}</DialogTitle>
-                        <DialogDescription className="text-white/70">
-                          Submit your application to join as a technical co-founder.
-                        </DialogDescription>
-                      </DialogHeader>
-                      {isGitHubUser && (
-                        <ApplicationForm 
-                          startupId={startup.id} 
-                          onClose={() => setShowForm(false)} 
-                        />
-                      )}
-                    </DialogContent>
-
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };
