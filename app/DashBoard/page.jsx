@@ -1,15 +1,25 @@
-"use client"
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Users, 
+"use client";
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  Users,
   Briefcase,
   ArrowUpRight,
   Loader2,
   CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import { useRouter } from 'next/navigation';
+  AlertCircle,
+  Calendar,
+  Building2,
+  Phone,
+  HelpCircle,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,19 +46,21 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { auth, db } from '../../firebase';
-import { 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
+import { auth, db } from "../../firebase";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
   getDocs,
   onSnapshot,
   serverTimestamp,
   orderBy,
-} from 'firebase/firestore';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import Navbar from '@/components/NavBar';
+} from "firebase/firestore";
+import { useAuthState } from "react-firebase-hooks/auth";
+import Navbar from "@/components/NavBar";
+import Category from '@/components/Category';
+
 
 const FounderDashboard = () => {
   const router = useRouter();
@@ -60,53 +72,75 @@ const FounderDashboard = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [formError, setFormError] = useState("");
   const [newListing, setNewListing] = useState({
-    title: '',
-    description: '',
-    equity: '',
-    location: '',
-    techStack: '',
-    requirements: '',
-    workType: 'remote',
-    commitment: 'full-time'
+    title: "",
+    description: "",
+    equity: "",
+    location: "",
+    techStack: "",
+    requirements: "",
+    workType: "remote",
+    commitment: "full-time",
+    foundingDate: "",
+    employeeCount: "",
+    whatsappNumber: "",
+    countryCode: "+1",
+    categories: [],
   });
 
-  // Fetch founder's listings and applications
+  const validateWhatsAppNumber = (number) => {
+    return /^\d{10}$/.test(number);
+  };
+
+
   useEffect(() => {
-    if (!user) return;
-
-    try {
-      const listingsRef = collection(db, 'startupListings');
-      const listingsQuery = query(
-        listingsRef,
-        where('founderId', '==', user.uid),
-        orderBy('createdAt', 'desc')
-      );
-
-      const unsubscribe = onSnapshot(listingsQuery, async (snapshot) => {
-        const listingsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setListings(listingsData);
-
-        // Calculate total applications
-        const applicationsRef = collection(db, 'applications');
-        const applicationsQuery = query(
-          applicationsRef,
-          where('founderId', '==', user.uid)
-        );
-        const applicationsSnap = await getDocs(applicationsQuery);
-        setTotalApplications(applicationsSnap.size);
-        
-        setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Error setting up listeners:', error);
+    if (!user) {
       setIsLoading(false);
+      return;
     }
+
+    let unsubscribe;
+    const fetchListings = async () => {
+      try {
+        const listingsRef = collection(db, "startupListings");
+        const listingsQuery = query(
+          listingsRef,
+          where("founderId", "==", user.uid),
+          orderBy("createdAt", "desc")
+        );
+
+        unsubscribe = onSnapshot(listingsQuery, async (snapshot) => {
+          const listingsData = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setListings(listingsData);
+
+          const applicationsRef = collection(db, "applications");
+          const applicationsQuery = query(
+            applicationsRef,
+            where("founderId", "==", user.uid)
+          );
+          const applicationsSnap = await getDocs(applicationsQuery);
+          setTotalApplications(applicationsSnap.size);
+          
+          // Only set loading to false after everything is loaded
+          setIsLoading(false);
+        });
+      } catch (error) {
+        console.error("Error setting up listeners:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchListings();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [user]);
+
 
   const handleNewListing = async (e) => {
     e.preventDefault();
@@ -115,44 +149,62 @@ const FounderDashboard = () => {
       return;
     }
 
+    if (newListing.categories.length === 0) {
+      setFormError("Please select at least one category");
+      return;
+    }
+
+    const equityValue = parseInt(newListing.equity);
+    if (isNaN(equityValue) || equityValue < 0 || equityValue > 100) {
+      setFormError("Equity must be a valid percentage between 0 and 100");
+      return;
+    }
+
+    if (!validateWhatsAppNumber(newListing.whatsappNumber)) {
+      setFormError("Please enter a valid 10-digit WhatsApp number");
+      return;
+    }
+
     try {
-      await addDoc(collection(db, 'startupListings'), {
+      await addDoc(collection(db, "startupListings"), {
         ...newListing,
+        equity: equityValue,
         founderId: user.uid,
         founderName: user.displayName,
         founderEmail: user.email,
         createdAt: serverTimestamp(),
-        techStack: newListing.techStack.split(',').map(tech => tech.trim()),
+        techStack: newListing.techStack.split(",").map((tech) => tech.trim()),
+        whatsappNumber: `${newListing.countryCode}${newListing.whatsappNumber}`,
+        categories: newListing.categories,
         applicants: 0,
-        status: 'active'
+        status: "active",
       });
 
       setIsNewListingOpen(false);
       setNewListing({
-        title: '',
-        description: '',
-        equity: '',
-        location: '',
-        techStack: '',
-        requirements: '',
-        workType: 'remote',
-        commitment: 'full-time'
+        title: "",
+        description: "",
+        equity: "",
+        location: "",
+        techStack: "",
+        requirements: "",
+        workType: "remote",
+        commitment: "full-time",
+        foundingDate: "",
+        employeeCount: "",
+        whatsappNumber: "",
+        countryCode: "+1",
+        categories: [],
       });
       setAcceptedTerms(false);
       setFormError("");
     } catch (error) {
-      console.error('Error creating listing:', error);
-      setFormError("An error occurred while creating the listing. Please try again.");
+      console.error("Error creating listing:", error);
+      setFormError(
+        "An error occurred while creating the listing. Please try again."
+      );
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-black pt-24 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#a6ff00] animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -160,106 +212,223 @@ const FounderDashboard = () => {
     <div className="min-h-screen bg-black pt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-4xl font-bold text-white">Founder Dashboard</h1>
             <p className="text-white/70 mt-2 text-lg">Manage your startup listings and track applications</p>
           </div>
           <Dialog open={isNewListingOpen} onOpenChange={setIsNewListingOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#a6ff00] text-black hover:bg-white px-6 h-12 text-base">
+              <Button className="bg-[#a6ff00] text-black hover:bg-white px-6 h-12 text-base w-full sm:w-auto">
                 <Plus className="w-5 h-5 mr-2" />
                 Create New Listing
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-black border border-white/10 max-w-2xl">
-              <form onSubmit={handleNewListing}>
+            <DialogContent className="bg-black border border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <form onSubmit={handleNewListing} className="space-y-6">
                 <DialogHeader>
                   <DialogTitle className="text-white text-2xl">Create New Startup Listing</DialogTitle>
                   <DialogDescription className="text-white/70 text-base">
                     Share your startup's vision and find the perfect tech co-founder.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6 mt-6">
+                <div className="space-y-8">
+                  {/* Form sections remain the same but with better spacing */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg text-white">Basic Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-white text-base">Startup Title</Label>
+                        <Input
+                          className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
+                          placeholder="Enter your startup name"
+                          value={newListing.title}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, title: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-white text-base">Description</Label>
+                        <Textarea
+                          className="bg-[#1f1f1f] border-white/10 text-white min-h-[120px] px-4 py-2 mt-2"
+                          placeholder="Describe your startup's mission and vision"
+                          value={newListing.description}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, description: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg text-white">Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-white text-base">Equity Percentage</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
+                          placeholder="e.g. 15"
+                          value={newListing.equity}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, equity: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-white text-base">Location</Label>
+                        <Input
+                          className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
+                          placeholder="e.g. San Francisco"
+                          value={newListing.location}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, location: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-white text-base">Work Type</Label>
+                        <select
+                          className="w-full bg-[#1f1f1f] border border-white/10 text-white h-12 px-3 rounded-md mt-2"
+                          value={newListing.workType}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, workType: e.target.value }))}
+                        >
+                          <option value="Remote">Remote</option>
+                          <option value="Hybrid">Hybrid</option>
+                          <option value="Onsite">On-site</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label className="text-white text-base">Commitment</Label>
+                        <select
+                          className="w-full bg-[#1f1f1f] border border-white/10 text-white h-12 px-3 rounded-md mt-2"
+                          value={newListing.commitment}
+                          onChange={(e) => setNewListing(prev => ({ ...prev, commitment: e.target.value }))}
+                        >
+                          <option value="Full-Time">Full-time</option>
+                          <option value="Part-Time">Part-time</option>
+                          <option value="Contract">Contract</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h3 className="text-lg text-white">Company Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-white text-base">Founding Date</Label>
+                        <Input
+                          type="date"
+                          className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
+                          value={newListing.foundingDate}
+                          onChange={(e) =>
+                            setNewListing((prev) => ({
+                              ...prev,
+                              foundingDate: e.target.value,
+                            }))
+                          }
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-white text-base">Number of Employees</Label>
+                        <select
+                          className="w-full bg-[#1f1f1f] border border-white/10 text-white h-12 px-3 rounded-md mt-2"
+                          value={newListing.employeeCount}
+                          onChange={(e) =>
+                            setNewListing((prev) => ({
+                              ...prev,
+                              employeeCount: e.target.value,
+                            }))
+                          }
+                          required
+                        >
+                          <option value="">Select employee count</option>
+                          <option value="1-5">1-5 employees</option>
+                          <option value="6-10">6-10 employees</option>
+                          <option value="11-25">11-25 employees</option>
+                          <option value="26-50">26-50 employees</option>
+                          <option value="50+">50+ employees</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-white text-base">Business WhatsApp</Label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-4 h-4 text-white/40 hover:text-white/60 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-[#1f1f1f] border-white/10 text-white p-3">
+                              <p>Contact details will only be shared with approved applicants</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          className="bg-[#1f1f1f] border border-white/10 text-white h-12 px-3 rounded-md"
+                          value={newListing.countryCode}
+                          onChange={(e) =>
+                            setNewListing((prev) => ({
+                              ...prev,
+                              countryCode: e.target.value,
+                            }))
+                          }
+                          required
+                        >
+                          <option value="+1">+1 (US)</option>
+                          <option value="+44">+44 (UK)</option>
+                          <option value="+91">+91 (IN)</option>
+                          <option value="+81">+81 (JP)</option>
+                          <option value="+86">+86 (CN)</option>
+                          <option value="+49">+49 (DE)</option>
+                          {/* Add more country codes as needed */}
+                        </select>
+                        <Input
+                          type="tel"
+                          className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 flex-1"
+                          placeholder="WhatsApp number (10 digits)"
+                          value={newListing.whatsappNumber}
+                          onChange={(e) =>
+                            setNewListing((prev) => ({
+                              ...prev,
+                              whatsappNumber: e.target.value,
+                            }))
+                          }
+                          pattern="\d{10}"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                  <h3 className="text-lg text-white">Categories</h3>
+                  <Category
+                    selectedCategories={newListing.categories}
+                    setSelectedCategories={(categories) => 
+                      setNewListing(prev => ({ ...prev, categories }))
+                    }
+                  />
+                </div>
                   <div>
-                    <Label className="text-white text-base mb-2">Startup Title</Label>
-                    <Input 
-                      className="bg-[#1f1f1f] border-white/10 text-white h-12"
-                      placeholder="Enter your startup name"
-                      value={newListing.title}
-                      onChange={(e) => setNewListing(prev => ({...prev, title: e.target.value}))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-white text-base mb-2">Description</Label>
-                    <Textarea 
-                      className="bg-[#1f1f1f] border-white/10 text-white min-h-[120px]"
-                      placeholder="Describe your startup's mission and vision"
-                      value={newListing.description}
-                      onChange={(e) => setNewListing(prev => ({...prev, description: e.target.value}))}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-white text-base mb-2">Equity Offer</Label>
-                      <Input 
-                        className="bg-[#1f1f1f] border-white/10 text-white h-12"
-                        placeholder="e.g. 10-15%"
-                        value={newListing.equity}
-                        onChange={(e) => setNewListing(prev => ({...prev, equity: e.target.value}))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-white text-base mb-2">Location</Label>
-                      <Input 
-                        className="bg-[#1f1f1f] border-white/10 text-white h-12"
-                        placeholder="e.g. San Francisco"
-                        value={newListing.location}
-                        onChange={(e) => setNewListing(prev => ({...prev, location: e.target.value}))}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-white text-base mb-2">Work Type</Label>
-                      <select 
-                        className="w-full bg-[#1f1f1f] border border-white/10 text-white h-12 rounded-md px-3"
-                        value={newListing.workType}
-                        onChange={(e) => setNewListing(prev => ({...prev, workType: e.target.value}))}
-                      >
-                        <option value="remote">Remote</option>
-                        <option value="hybrid">Hybrid</option>
-                        <option value="onsite">On-site</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-white text-base mb-2">Commitment</Label>
-                      <select 
-                        className="w-full bg-[#1f1f1f] border border-white/10 text-white h-12 rounded-md px-3"
-                        value={newListing.commitment}
-                        onChange={(e) => setNewListing(prev => ({...prev, commitment: e.target.value}))}
-                      >
-                        <option value="full-time">Full-time</option>
-                        <option value="part-time">Part-time</option>
-                        <option value="contract">Contract</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-white text-base mb-2">Required Tech Stack</Label>
-                    <Input 
-                      className="bg-[#1f1f1f] border-white/10 text-white h-12"
+                    <h3 className="text-lg text-white mb-4">Tech Stack</h3>
+                    <Label className="text-white text-base">Required Tech Stack</Label>
+                    <Input
+                      className="bg-[#1f1f1f] border-white/10 text-white h-12 px-4 mt-2"
                       placeholder="e.g. React, Node.js, AWS (comma separated)"
                       value={newListing.techStack}
-                      onChange={(e) => setNewListing(prev => ({...prev, techStack: e.target.value}))}
+                      onChange={(e) => setNewListing(prev => ({ ...prev, techStack: e.target.value }))}
                       required
                     />
                   </div>
-                  <div className="flex items-start space-x-3 mt-6">
+
+                  <div className="flex items-start space-x-3">
                     <Checkbox
                       id="terms"
                       checked={acceptedTerms}
@@ -271,12 +440,11 @@ const FounderDashboard = () => {
                         htmlFor="terms"
                         className="text-sm text-white/70 leading-relaxed"
                       >
-                        I agree to the terms and conditions, including the fair use policy and 
-                        commitment to responding to applicants within 7 business days. I understand 
-                        that failure to comply may result in listing removal.
+                        I agree to the terms and conditions, including the fair use policy and commitment to responding to applicants within 7 business days. I understand that failure to comply may result in listing removal.
                       </label>
                     </div>
                   </div>
+
                   {formError && (
                     <Alert variant="destructive" className="bg-red-900/20 border-red-900">
                       <AlertCircle className="h-4 w-4" />
@@ -285,8 +453,9 @@ const FounderDashboard = () => {
                     </Alert>
                   )}
                 </div>
-                <DialogFooter className="mt-8">
-                  <Button type="submit" className="bg-[#a6ff00] text-black hover:bg-white h-12 px-8">
+
+                <DialogFooter>
+                  <Button type="submit" className="bg-[#a6ff00] text-black hover:bg-white h-12 px-8 w-full sm:w-auto">
                     Create Listing
                   </Button>
                 </DialogFooter>
@@ -351,7 +520,19 @@ const FounderDashboard = () => {
   );
 };
 
-const StartupListing = ({ id, title, description, equity, location, applicants, techStack, workType, commitment, onViewApplications }) => (
+const StartupListing = ({ 
+  id, 
+  title, 
+  description, 
+  equity, 
+  location, 
+  applicants, 
+  techStack, 
+  workType, 
+  commitment, 
+  categories,
+  onViewApplications 
+}) => (
   <Card className="bg-[#1f1f1f] border-white/10 hover:border-[#a6ff00]/50 transition-all duration-300">
     <CardHeader className="pb-4">
       <div className="flex items-start justify-between">
@@ -392,6 +573,21 @@ const StartupListing = ({ id, title, description, equity, location, applicants, 
             {location}
           </div>
         </div>
+        {categories && categories.length > 0 && (
+            <div>
+              <p className="text-sm text-white/40 mb-2">Categories</p>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 rounded-full bg-[#1a1a1a] border border-white/10 text-white/70 text-sm"
+                  >
+                    {category}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         <div>
           <p className="text-sm text-white/40 mb-2">Required Tech Stack</p>
           <div className="flex flex-wrap gap-2">
