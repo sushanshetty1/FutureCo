@@ -22,6 +22,7 @@ import { auth } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRouter } from 'next/navigation';
 import photo from '../public/profile.png';
+import NotificationBell from './NotificationBell'
 
 const Nav = () => {
   const [user] = useAuthState(auth);
@@ -111,15 +112,10 @@ const Nav = () => {
 
             {/* Right Section - Notifications, Profile, Logout */}
             <div className="hidden md:flex flex-1 justify-end items-center space-x-6">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative text-white hover:text-[#a6ff00]"
+              <NotificationBell 
+                userId={user?.uid} 
                 onClick={handleNotifications}
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full" />
-              </Button>
+              />
                 
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
